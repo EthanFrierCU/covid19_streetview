@@ -1,28 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: ethanfrier
-Streetview Covid19 Visualizer
-ATLS 1300-5650 Final Project 
+Created on Tue Dec  8 14:59:30 2020
+@author: Ethan Frier
 
-This script retrieves the most recent US covid data by county from the New York
-Times covid github repository. It then sorts by the total number of cases by 
-county, and outputs today's top 12 counties to a list. The top counties are 
-invariably large cities, so this data is not as interesting as it would seem.
-
-I would like to modify it further to sort by the highest number of cases 
-per capita. This will show the case rate, not the total number of cases. The 
-rate is a more effective way of looking at the velocity and impact of the
-virus, and more accurately highlights the effect on less populous areas, which 
-are currently the hardest hit. This requires a dataset with each county's 
-population to compare total cases against. I'm not sure where to find best 
-or cleanest data for 1,929 counties, or if I should use the FIPS system?
- 
-NYTCovid class is modified from: https://github.com/tirthajyoti/Covid-19-analysis/blob/master/Notebook/NYTCovid.py
-The methods __init__(), updateCounty(), dateUpdate(), process() were copied 
-and lightly modified - 30 lines total
-
+This program downloads street view images from google maps static street view 
+api based on latitude and longitude data from a csv file. The images as saved 
+to a local folder in same directory as this script. 
 """
+
+import csv
+import urllib
+import os
 import pandas as pd
 import requests 
 import io
@@ -30,28 +19,32 @@ import time
 import datetime
 
 
+# store data from CSV file in a list called locations
+locations = []
+NYTcountiesData = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
+
 class NYTCovid:
     def __init__(self):
         from datetime import date
+        self._today = date.today()
         self.numCounties = 12
         self.topCounties = []
         self.countydf = None
         self._countyupdated = False
         self._processed = False
         self._sorted = False
-        self._today = date.today()
     
     
     def today(self):
         print("Today's date is: ",self._today)
         
         
-    def updateCounty(self, url="https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"):
+    def updateCounty(self, url=NYTcountiesData):
         '''
         Retrieves most recent data from New York Times Covid19 github repository. 
         Stores data in self.countydf panda data frame. 
         '''
-        url = url
+        url = NYTcountiesData
         s=requests.get(url).content
         self.countydf = pd.read_csv(io.StringIO(s.decode('utf-8')))
         self.countydf['date'] =  pd.to_datetime(self.countydf['date'], format='%Y-%m-%d')
@@ -115,15 +108,13 @@ class NYTCovid:
             for c in range(self.numCounties):
                 county_ = self.countydf.iloc[c]['county']
                 state_ = self.countydf.iloc[c]['state']
-                location_ = (county_, state_)
+                location_ = str(f'{county_},{state_}')
                 self.topCounties.append(location_)
            
             print(f'Top {covid.numCounties} counties by total cases:')
             for location in covid.topCounties:
                 print(location)
                 
-            
-
 covid = NYTCovid()
 
 covid.today()
@@ -133,7 +124,55 @@ covid.dateUpdate()
 covid.process()
 covid.sortByCases()
 covid.getTopCounties()
+                
+
+# variables for street view api and image processing
+keyDoc = open('keys.txt', 'r')
+apiKey = keyDoc.read()
+print(apiKey)
+localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/streetview_test/downloadTest/'
+curRow = 1
+numImages = 0;
+headings = [0, 90, 180, 270]
+fov = 90
 
 
+def getStreetView(lat_, lon_, heading_, fileName_, saveFolder_):
+    '''This function creates a URL with parameters for each image, 
+    and downloads image using streetview static api ''' 
+    
+    # assign parameters for image request
+    base = r'https://maps.googleapis.com/maps/api/streetview?'
+    imageSize = r'&size=640x500'    # max free size is 640x640
+    imageLocation = r'&location={0},{1}'.format(lat_, lon_)
+    imageHeading = r'&fov={0}&heading={1}'.format(fov, heading_)
+    useAPI = r'&key={0}'.format(apiKey)
+   
+    # create URL, request image, and download to localFolder
+    myUrl = base + imageSize + imageLocation + imageHeading + useAPI 
+    urllib.request.urlretrieve(myUrl, os.path.join(saveFolder_,fileName_))
+    
+    
+# for each location, format file and download street view image for each heading
+for location in locations:
+    for heading in headings:
+        # extract the lat and lon data from tuple in list
+        lat, lon = location
+        
+        # define file name for saved image
+        filename = "{0}_{1}_lat{2}_lon{3}.jpg".format(str(curRow).zfill(3), heading, lat, lon,)
+        
+        # download street view images
+        getStreetView(lat, lon, heading, filename, localFolder)  
+        print(f'   Got {filename}')
+        
+        numImages += 1
+        
+    curRow += 1
+    
 
+    
+# downloads complete, print number of images processes    
+print(f'Processed {str(numImages)} images.')
+print('Done.')
 
