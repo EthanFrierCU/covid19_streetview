@@ -77,6 +77,7 @@ class NYTCovidData:
     
     
     def today(self):
+        '''Prints today's date from datetime library'''
         print("Today's date is: ",self._today)
         
         
