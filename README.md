@@ -1,7 +1,13 @@
 # covid19_streetview
 
+Ethan Frier
+
+ethan.frier@colorado.edu
+
 Streetview Covid19 Visualizer
+
 ATLS 1300-5650 Final Project
+
 December 2020
 
 The script covid_streetview.py downloads streetview images from google maps 
@@ -18,13 +24,14 @@ The most recent US covid data by county is retrieved from the New York Times
 repo - https://github.com/nytimes/covid-19-data . The data is then sorted by
 the total number of cases by county and outputs today's top counties to a list.
 Each list index contains a text string of 'County,State'. In order to best
-communicate with the streetview api, this data is converted to
-'latitude,longitude' coordinates using the geopy library.
+communicate with the streetview api this data is converted to 'latitude,longitude' 
+coordinates using the geopy library. Using these coordinates the StreetView 
+class generates an API request and downloads images from those top counties.
 
 The NYTCovidData class was modified from TowardsDataScience.com
 https://towardsdatascience.com/analyze-ny-times-covid-19-dataset-86c802164210
 I copied and modified the methods: today(), updateCounty(), dateUpdate(),
-process(), as well as 5 lines from __init__().
+process(), as well as 5 lines from _init_().
 
 Future Improvements:
     
