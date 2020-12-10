@@ -5,14 +5,15 @@ Created on Tue Dec  8 14:59:30 2020
 @author: Ethan Frier
 
 This program downloads street view images from google maps static street view 
-api based on latitude and longitude data from a csv file. The images as saved 
-to a local folder in same directory as this script. 
+api based on location data from the New York Times Covid19 github data repo. 
+
+
 """
 
 import csv
 import urllib
 import os
-import pandas as pd
+import pandas
 import requests 
 import io
 import time
@@ -20,9 +21,9 @@ import datetime
 import geopy
 
 
-
-# store data from CSV file in a list called locations
+# url for NYT counties raw data csv
 NYTcountiesData = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
+
 
 class NYTCovid:
     def __init__(self):
@@ -47,8 +48,8 @@ class NYTCovid:
         '''
         url = NYTcountiesData
         s=requests.get(url).content
-        self.countydf = pd.read_csv(io.StringIO(s.decode('utf-8')))
-        self.countydf['date'] =  pd.to_datetime(self.countydf['date'], format='%Y-%m-%d')
+        self.countydf = pandas.read_csv(io.StringIO(s.decode('utf-8')))
+        self.countydf['date'] =  pandas.to_datetime(self.countydf['date'], format='%Y-%m-%d')
         self._countyupdated = True
     
     
@@ -70,7 +71,7 @@ class NYTCovid:
         new cases and new deaths using the difference in numbers by day in 
         each county in the list. Usually takes 60-120 seconds to run. 
         '''
-        pd.set_option('mode.chained_assignment', None)
+        pandas.set_option('mode.chained_assignment', None)
         self.countydict= {}
         t1 = time.time()
         if self._countyupdated:
@@ -127,6 +128,7 @@ covid.sortByCases()
 covid.getTopCounties()
         
 
+
 locations = []
  
 # variables for street view api and image processing
@@ -134,10 +136,11 @@ keyDoc = open('keys.txt', 'r')
 apiKey = keyDoc.read()
 print(apiKey)
 localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
-curRow = 1
-numImages = 0;
+# curRow = 1
+# numImages = 0
 headings = [0, 180]
 fov = 90
+radius = 100000
 
 
 def getStreetView(lat_, lon_, heading_, fileName_, saveFolder_):
@@ -149,42 +152,56 @@ def getStreetView(lat_, lon_, heading_, fileName_, saveFolder_):
     imageSize = r'&size=640x500'    # max free size is 640x640
     imageLocation = r'&location={0},{1}'.format(lat_, lon_)
     imageHeading = r'&fov={0}&heading={1}'.format(fov, heading_)
+    searchRadius = r'&radius={0}'.format(radius)
     useAPI = r'&key={0}'.format(apiKey)
    
-    print
     # create URL, request image, and download to localFolder
-    myUrl = base + imageSize + imageLocation + imageHeading + useAPI 
+    myUrl = base + imageSize + imageLocation + imageHeading + searchRadius + useAPI 
     urllib.request.urlretrieve(myUrl, os.path.join(saveFolder_,fileName_))
    
 
+def makeLatLon():
+    '''
+    Uses geopy library to convert the county,state string from NYTCovid into 
+    a latitude and longitude. Also converts string into a nicer address text 
+    string which is stored in locationText. 
+    '''
+    from geopy.geocoders import Nominatim
+    geolocator = Nominatim(user_agent="covid_streetview")
 
-from geopy.geocoders import Nominatim
-geolocator = Nominatim(user_agent="covid_streetview")
-
-for l in covid.topCounties:
-    convertLocation = geolocator.geocode(l)
-    locationText = convertLocation.address
-    latLon = (convertLocation.latitude,convertLocation.longitude)
-    locations.append(latLon)
+    for l in covid.topCounties:
+        convertLocation = geolocator.geocode(l)
+        locationText = convertLocation.address
+        latLon = (convertLocation.latitude,convertLocation.longitude)
+        locations.append(latLon)
+        print(latLon)
     
+
 
 # for each location, format file and download street view image for each heading
-for location in locations:
-    for heading in headings:
-        # extract the lat and lon data from tuple in list
-        lat, lon = location
+
+def execute():
+    curRow = 1
+    numImages = 0
+    for location in locations:
+        for heading in headings:
+            # extract the lat and lon data from tuple in list
+            lat, lon = location
+            
+            # define file name for saved image
+            filename = "{0}_{1}_lat{2}_lon{3}.jpg".format(str(curRow).zfill(3), heading, lat, lon,)
+            
+            # download street view images
+            getStreetView(lat, lon, heading, filename, localFolder)  
+            print(f'   Got {filename}')
+            
+            numImages += 1
+            
+        curRow += 1
+      
         
-        # define file name for saved image
-        filename = "{0}_{1}_lat{2}_lon{3}.jpg".format(str(curRow).zfill(3), heading, lat, lon,)
-        
-        # download street view images
-        getStreetView(lat, lon, heading, filename, localFolder)  
-        print(f'   Got {filename}')
-        
-        numImages += 1
-        
-    curRow += 1
-    
+makeLatLon()      
+execute()
 
     
 # downloads complete, print number of images processes    
