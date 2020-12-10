@@ -12,8 +12,8 @@ api based on location data from the New York Times Covid19 github repo.
 Humans respond most effectively to emotion as compared to information. In fact
 too much information, regardless of quality or source, can sometimes have an
 adverse effect. The goal of this project is to put these data into context.
-By displaying a limited amount of high quality and recent data in an more
-human context, the hope is that this piece will make these data more digestible.
+By displaying a limited amount of high quality current data in a more human 
+context, the hope is that this piece will make these data more digestible.
 
 The most recent US covid data by county is retrieved from the New York Times
 repo - https://github.com/nytimes/covid-19-data . The data is then sorted by
@@ -22,8 +22,8 @@ Each list index contains a text string of 'County,State'. In order to best
 communicate with the streetview api, this data is converted to
 'latitude,longitude' coordinates using the geopy library.
 
-The NYT data is managed by the NYTCovidData class, which was modified from
-TowardsDataScience.com - https://towardsdatascience.com/analyze-ny-times-covid-19-dataset-86c802164210
+The NYTCovidData class was modified from TowardsDataScience.com
+https://towardsdatascience.com/analyze-ny-times-covid-19-dataset-86c802164210
 I copied and modified the methods: today(), updateCounty(), dateUpdate(),
 process(), as well as 5 lines from __init__() : 34 lines
 
@@ -49,10 +49,8 @@ will display on screen a tiled montage of the images from the top counties by
 case rate, with the address text and current covid data overlaid. The speed at
 which the images update is relative to the current national caseload.
 
-
 """
 
-# import csv
 import urllib
 import os
 import pandas
@@ -63,11 +61,54 @@ import datetime
 import geopy
 
 
-
 class NYTCovidData:
+    """
+    Manages data from New York Times Covid19 repository.
+
+    Attributes
+    ----------
+    NYTcountiesData : str
+        URL points to raw NYT counties CSV file
+    _today : str
+        current date from datetime library  
+    numCounties : int
+        number of counties to get images for
+    topCounties : list
+        stores text strings of 'County,State' limited to numCounties
+    countydf : DataFrame
+        pandas DataFrame to store data from NYT CSV file
+    _countyupdated : bool
+        checks updateCounty()
+    _processed : bool
+        checks process()
+    _sorted : bool
+        checks sortByCases()
+    countydict : dictionary
+        stores data from countydf[DataFrame]
+    countylist : list 
+        list of every unique county in NYT CSV file
+
+    Methods
+    -------
+    today():
+        Prints today's date.
+    updateCounty():
+        Retrieves CSV data from NYT repo and stores it in countydf[DataFrame].
+    dateUpdate():
+        Checks that updateCounty() has been run and prints date of newest data.
+    process():
+        Processes countydf[DataFrame] using countydict{} and countylist[].
+    sortByCases():
+        Sorts countydf[DataFrame] by date then cases.    
+    getTopCounties():
+        Stores top counties in topCounties[].  
+        
+    """
+    
     def __init__(self):
-        self.NYTcountiesData = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
+        """Initialize NYTCovidData class attributes. """
         from datetime import date
+        self.NYTcountiesData = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
         self._today = date.today()
         self.numCounties = 12
         self.topCounties = []
@@ -76,45 +117,63 @@ class NYTCovidData:
         self._processed = False
         self._sorted = False
     
-    
     def today(self):
-        '''Prints today's date from datetime library'''
+        """Prints today's date from datetime library."""
         print("Today's date is: ",self._today)
-        
-        
+              
     def updateCounty(self):
-        '''
-        Retrieves most recent data from New York Times Covid19 github repository. 
-        Stores data in self.countydf panda data frame. 
-        '''
+        """ Retrieves most recent data from New York Times Covid19 repository.
+        
+        Uses requests library to get the CSV file at URL NYTcountiesData. 
+        Uses pandas library to read the CSV and save in countydf[DataFrame].
+        Formats the date axis of countydf. Sets _countyupdated = True. 
+       
+        Returns:
+            countydf : DataFrame
+                contains the data from NYT counties CSV file
+            _countyupdated : bool
+            
+        """
         url = self.NYTcountiesData
-        s=requests.get(url).content
+        s = requests.get(url).content
         self.countydf = pandas.read_csv(io.StringIO(s.decode('utf-8')))
         self.countydf['date'] =  pandas.to_datetime(self.countydf['date'], format='%Y-%m-%d')
         self._countyupdated = True
     
-    
     def dateUpdate(self):
-        '''
-        Checks that updateCounty() has been run, then displays date of most
-        recent data.
-        '''
+        """ Checks for most recent data.
+        
+        If updateCounty() has been run, it checks for the most recent date
+        of data in the newly created countydf[DataFrame]. Prints date. 
+            
+        """
         if self._countyupdated:
             print("Most recent data:",self.countydf.iloc[-1]['date'].date())
         else:
             print("Data has not been updated!")
-       
-        
+               
     def process(self):
-        '''
-        Creates a dictionary to store data from data frame countydf. Creates a
-        list of all counties, and uses it to traverse countydf data. Calculates
-        new cases and new deaths using the difference in numbers by day in 
-        each county in the list. Usually takes 60-120 seconds to run. 
-        '''
+        """Processes NYT data.
+        
+        Usually takes 60-120 seconds to run. 
+
+        Creates a dictionary to store data from countydf[DataFrame]. Creates a
+        list of all counties, and uses it to traverse countydf[DataFrame]. 
+        Calculates new cases and new deaths in each county and stores in 
+        countydict{}. Prints time it took once complete. 
+        
+        Returns:
+            countydict : dictionary
+                contains data from countydf[DataFrame]
+            countylist : list 
+                all unique counties 
+            _processed : bool
+            
+        """
         pandas.set_option('mode.chained_assignment', None)
         self.countydict= {}
         t1 = time.time()
+        
         if self._countyupdated:
             self.countylist = list(self.countydf['county'].unique())
             print('')
@@ -124,74 +183,140 @@ class NYTCovidData:
                 county_df=self.countydf[self.countydf['county']==c]
                 county_df['newcases'] = county_df['cases'].diff()
                 county_df['newdeaths'] = county_df['deaths'].diff()
-                self.countydict[c]=county_df
+                self.countydict[c]=county_df       
         
         self._processed = True
         t2 = time.time()
         delt = round(t2-t1,3)
         print("Finished. Took {} seconds".format(delt))
-            
-        
+                    
     def sortByCases(self):
-        '''
-        Checks that process() has been run. Sorts counties by data, then total 
-        cases in descending order.
-        '''
+        """ Sorts counties by date and total cases
+        
+        Checks that process() has been run. Sorts countydf[DataFrame] by most 
+        recent, then total cases in descending order. Prints to terminal.
+        
+        Returns:
+            countydf : DataFrame
+            _sorted : bool
+        
+        """
         if self._processed:
-            print('Sorted by recent number of cases per county.')
-            print('')
             self.countydf = self.countydf.sort_values(by=['date','cases'], ascending=False)
             self._sorted = True
-                
-            
+            print('Sorted by recent number of cases per county.')
+            print('')
+        else:
+            print('Not processed yet!')
+                            
     def getTopCounties(self):
-        '''
-        Stores sorted data into a list limited to numCounties and prints the 
-        location (county,state) to the terminal.
-        '''
+        """ Creates list of counties with most cases today.
+
+        Checks that countydf[DataFrame] has been sorted. Extracts the county 
+        and state from the DataFrame and formats each into a single string 
+        as 'county,state'. Saves each location string to topCounties[].
+        Prints the number of counties, sorting method, and each county name.
+
+        Returns:
+            topCounties : list 
+            
+        """
         if self._sorted:       
             for c in range(self.numCounties):
                 county_ = self.countydf.iloc[c]['county']
                 state_ = self.countydf.iloc[c]['state']
                 location_ = str(f'{county_},{state_}')
                 self.topCounties.append(location_)
-           
+            
             print(f'Top {covid.numCounties} counties by total cases:')
             for location in covid.topCounties:
                 print(f'   {location}')
 
 
+class StreetView:
+    """ Uses NYT covid data to request images from google streetview API.
 
-class manageStreetView:
+    Attributes
+    ----------
+    apiKey : str
+        unique and private key used to verify API requests 
+    locations : list
+        top locations formated as 'latitude,longitude'
+    headings : list
+        direction (0-360) of camera at each location
+    fov : int
+        field of view (0-120) of camera for all images
+    radius : int
+        distance in meters from location API will look for an image (best when > 100000)
+    size : str
+        size of image - max free size is 640x640 
+    numImages : int
+        number of images processed 
+    numLocations : int
+        number of locations processed 
+
+    Methods
+    -------
+    getKey():
+        Pulls API key from keys.txt.
+    getStreetView(lat, lon, heading, fileName, saveFolder):
+        Compiles unique URL and downloads images from streetview API.
+    makeLatLon():
+        Generates locations['latitude,longitude'] from topCounties['County,State'].
+    execute():
+        Generates unique filename and calls getStreetView(parameters).
+    """    
+    
     def __init__(self):
+        """ Initialize StreetView class attributes. """
         self.apiKey = ''
         self.locations = []
-        self.headings = [0, 180]    # Degrees(0-360) - Each index position = direction of unique photo at location
-        self.fov = 90               # Field of view - 90 is standard - range(60-120))
-        self.radius = 100000        # Distance in meters from lat long it will look for an image - Should be > 100000
-        self.size = '640x500'       # Size of image - max free size is 640x640
+        self.headings = [0, 180]    
+        self.fov = 90               
+        self.radius = 100000        
+        self.size = '640x500'       
         self.numImages = 0
-        self.curRow = 1
+        self.numLocations = 1
         self.localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
 
-        
-    def getApiKey(self):
-        '''
-        API key is stored in keys.txt file. In order to keep this secret the
-        key is retrieved from the file on run and the file is git ignored
-        '''
+    def getKey(self):
+        """ Pulls API key from keys.txt.
+
+        API keys should be kept secret. This method gets a key string from 
+        keys.txt file which only contains the API key string. This text 
+        file is included in the gitignore file so it stays private. Prints
+        obfuscated API key to terminal.
+
+        Returns:
+            apiKey : str 
+            
+        """
         keyDoc = open('keys.txt', 'r')
         self.apiKey = keyDoc.read()
         printKeyA, printKeyB = self.apiKey[0:5],self.apiKey[-6:-1]
-        print(f'Recieved API key: {printKeyA}..{printKeyB}')
+        print(f'Recieved API key: {printKeyA}xxxxxxxxxxxxxxxxxx{printKeyB}')
         print('')
 
-
     def getStreetView(self, lat_, lon_, heading_, fileName_, saveFolder_):
-        '''This function creates a URL with parameters for each image, 
-        and downloads image using streetview static api 
-        ''' 
-        # assign parameters for image request
+        """ Downloads images from Google Streetview static API.
+        
+        Generates unique URL using: size, lat_, lon_, fov, heading_, radius, apiKey.
+        Uses urllib library to send request to API.
+        Downloads images to saveFolder_ and names as .jpg using filename_ 
+
+        Parameters:
+            lat_ : int
+                latitude of current image to be downloaded 
+            lon_ : int
+                longitude of current image to be downloaded 
+            heading_ : int
+                heading of current image to be downloaded 
+            fileName_ : str
+                file name of current image to be downloaded
+            saveFolder : str
+                folder where current image will be downloaded
+            
+        """
         base = r'https://maps.googleapis.com/maps/api/streetview?'
         imageSize = r'&size={}'.format(self.size) 
         imageLocation = r'&location={0},{1}'.format(lat_, lon_)
@@ -199,59 +324,76 @@ class manageStreetView:
         searchRadius = r'&radius={}'.format(self.radius)
         useAPI = r'&key={}'.format(self.apiKey)
        
-        # create URL, request image, and download to localFolder
         myUrl = base + imageSize + imageLocation + imageHeading + searchRadius + useAPI 
         urllib.request.urlretrieve(myUrl, os.path.join(saveFolder_,fileName_))
    
-
     def makeLatLon(self):
-        '''
-        Uses geopy library to convert 'county,state' from NYTCovid into 
-        a latitude and longitude. Also converts string into a nicer address text 
-        string which is stored in locationText. 
-        '''
+        """ Generates list of locations as latitude and longitude.
+
+        This module uses the geopy library to convert a text string location 
+        into a latitude and longitude. It uses topCounties[] as an input. It
+        also generates an address for each location which is stored in 
+        locationText (unused).
+
+        Returns:
+            locations[] : list 
+            locationText : str
+            
+        """
         from geopy.geocoders import Nominatim
         geolocator = Nominatim(user_agent="covid_streetview")
     
-        for l in covid.topCounties:
-            convertLocation = geolocator.geocode(l)
-            
-            # not used yet, should be put into a list later for csv file
-            locationText = convertLocation.address
-            
-            #convert the location to a latitude and longitude and store in list
+        for L in covid.topCounties:
+            convertLocation = geolocator.geocode(L) 
+            locationText = convertLocation.address 
             latLon = (convertLocation.latitude,convertLocation.longitude)
             self.locations.append(latLon)
             print(latLon)
 
-
     def execute(self):
-        '''
-        For each location, format file and download street view image for each 
-        heading. Defines filename as index_heading_lat_lon.jpg
-        '''    
+        """ Formats filename and parameters for streetview API request
+
+        Loops through each location in locations[] and generates a unique 
+        filename and parameters for getStreetView(). It then calls 
+        getStreetView() and prints each time an image has been downloaded. 
+        
+        The structure for generating each image is: 
+            location[i] (index position containing 'latitude,longitude')
+                heading[i] (direction camera is pointing)
+                    latitude (extracted from locations[i])
+                    longitude (extracted from locations[i])
+                    numLocations (ranking of county and order it is processed)
+        
+        Calls Method:
+            getStreetView(float(latitude), float(longitude), int(headings[i]), str(filename), str(self.localFolder).    
+            
+        Returns:
+            lat : float 
+                extracted from locations[i]
+            lon : float 
+                extracted from locations[i]
+            filename : str 
+                ending in .jpg using: numLocations, headings[i], lat, lon
+            numImages : int
+                number of images processed
+            numLocations : int 
+                number of locations processed
+                
+        """  
         for location in self.locations:
             for heading in self.headings:
-                # extract the lat and lon data from tuple in list
-                lat, lon = location
-                
-                # define file name for saved image
-                filename = "{0}_{1}_lat{2}_lon{3}.jpg".format(str(self.curRow).zfill(3), heading, lat, lon,)
-                
-                # download street view images
+                lat, lon = location     
+                filename = "{0}_{1}_lat{2}_lon{3}.jpg".format(str(self.numLocations).zfill(3), heading, lat, lon,)        
                 self.getStreetView(lat, lon, heading, filename, self.localFolder)  
-                print(f'   Got {filename}')
-                
-                self.numImages += 1
-                
-            self.curRow += 1
-        
-            
+                print(f'   Got {filename}')      
+                self.numImages += 1      
+            self.numLocations += 1
+                    
 
 covid = NYTCovidData()
-stView = manageStreetView()
+streetView = StreetView()
 
-stView.getApiKey()
+streetView.getKey()
 
 covid.today()
 covid.updateCounty()
@@ -261,9 +403,9 @@ covid.process()
 covid.sortByCases()
 covid.getTopCounties()
         
-stView.makeLatLon()      
-stView.execute()
+streetView.makeLatLon()      
+streetView.execute()
 
-print(f'Processed {str(stView.numImages)} images.')
+print(f'Processed {str(streetView.numImages)} images.')
 print('Done.')
 
