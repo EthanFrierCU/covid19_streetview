@@ -1,8 +1,11 @@
 # ignore api keys file
 keys.txt
 
-# ignore downloadImages/ folder
+# ignore downloadImages folder
 # downloadImages/
+
+#ignore oldImages folder
+oldImages/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
