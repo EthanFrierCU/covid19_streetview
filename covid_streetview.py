@@ -19,8 +19,8 @@ The most recent US covid data by county is retrieved from the New York Times
 repo - https://github.com/nytimes/covid-19-data . The data is then sorted by
 the total number of cases by county and outputs today's top counties to a list.
 Each list index contains a text string of 'County,State'. In order to best
-communicate with the streetview api this data is converted to 'latitude,longitude' 
-coordinates using the geopy library. Using these coordinates the StreetView 
+communicate with the streetview api this data is converted to latitude and 
+longitude  using the geopy library. Using these coordinates the StreetView 
 class generates an API request and downloads images from those top counties.
 
 The NYTCovidData class was modified from TowardsDataScience.com
@@ -344,7 +344,7 @@ class StreetView:
         from geopy.geocoders import Nominatim
         geolocator = Nominatim(user_agent="covid_streetview")
         print('')
-        print(f'Using geopy {len(covid.topCounties)} locations converting:')
+        print(f'Using geopy: converting {len(covid.topCounties)} locations:')
         
         for L in covid.topCounties:
             convertLocation = geolocator.geocode(L) 
