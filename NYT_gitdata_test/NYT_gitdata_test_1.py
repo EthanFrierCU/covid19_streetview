@@ -17,7 +17,8 @@ virus, and more accurately highlights the effect on less populous areas, which
 are currently the hardest hit. This requires a dataset with each county's 
 population to compare total cases against. I'm not sure where to find best 
 or cleanest data for 1,929 counties, or if I should use the FIPS system?
- 
+
+https://towardsdatascience.com/analyze-ny-times-covid-19-dataset-86c802164210
 NYTCovid class is modified from: https://github.com/tirthajyoti/Covid-19-analysis/blob/master/Notebook/NYTCovid.py
 The methods __init__(), updateCounty(), dateUpdate(), process() were copied 
 and lightly modified - 30 lines total

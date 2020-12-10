@@ -49,7 +49,7 @@ print(apiKey)
 localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/streetview_test/downloadTest/'
 curRow = 1
 numImages = 0;
-headings = [0, 90, 180, 270]
+headings = [0, 180]
 fov = 90
 
 

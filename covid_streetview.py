@@ -17,6 +17,8 @@ import requests
 import io
 import time
 import datetime
+import geopy
+
 
 
 # store data from CSV file in a list called locations
@@ -124,7 +126,11 @@ covid.dateUpdate()
 covid.process()
 covid.sortByCases()
 covid.getTopCounties()
-                
+         
+
+# from geopy.geocoders import Nominatim
+# geolocator = Nominatim(user_agent="covid_streetview")
+# convertLocation = geolocator.geocode("175 5th Avenue NYC")
 
 # variables for street view api and image processing
 keyDoc = open('keys.txt', 'r')
