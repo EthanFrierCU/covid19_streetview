@@ -2,7 +2,7 @@
 keys.txt
 
 # ignore downloadImages/ folder
-downloadImages/
+# downloadImages/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
