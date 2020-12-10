@@ -19,7 +19,7 @@ population to compare total cases against. I'm not sure where to find best
 or cleanest data for 1,929 counties, or if I should use the FIPS system?
  
 NYTCovid class is modified from: https://github.com/tirthajyoti/Covid-19-analysis/blob/master/Notebook/NYTCovid.py
-The methods updateCounty(), dateUpdate(), process() were copied - 27 lines total
+The methods updateCounty(), dateUpdate(), process() were copied - 24 lines total
 
 """
 import pandas as pd
@@ -40,23 +40,41 @@ class NYTCovid:
         self._sorted = False
         self._today = date.today()
     
+    
     def today(self):
         print("Today's date is: ",self._today)
         
+        
     def updateCounty(self, url="https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"):
+        '''
+        Retrieves most recent data from New York Times Covid19 github repository. 
+        Stores data in self.countydf panda data frame. 
+        '''
         url = url
         s=requests.get(url).content
         self.countydf = pd.read_csv(io.StringIO(s.decode('utf-8')))
         self.countydf['date'] =  pd.to_datetime(self.countydf['date'], format='%Y-%m-%d')
         self._countyupdated = True
     
+    
     def dateUpdate(self):
+        '''
+        Checks that updateCounty() has been run, then displays date of most
+        recent data.
+        '''
         if self._countyupdated:
             print("Most recent data:",self.countydf.iloc[-1]['date'].date())
         else:
             print("Data has not been updated!")
        
+        
     def process(self):
+        '''
+        Creates a dictionary to store data from data frame countydf. Creates a
+        list of all counties, and uses it to traverse countydf data. Calculates
+        new cases and new deaths using teh difference in numbers by day in 
+        each county in the list. Usually takes 60-120 seconds to run. 
+        '''
         pd.set_option('mode.chained_assignment', None)
         self.countydict= {}
         t1 = time.time()
@@ -73,13 +91,23 @@ class NYTCovid:
         delt = round(t2-t1,3)
         print("Finished. Took {} seconds".format(delt))
             
+        
     def sortByCases(self):
+        '''
+        Checks that process() has been run. Sorts counties by data, then total 
+        cases in descending order.
+        '''
         if self._processed:
             print('Sorted by recent number of cases per county.')
             self.countydf = self.countydf.sort_values(by=['date','cases'], ascending=False)
             self._sorted = True
                 
+            
     def getTopCounties(self):
+        '''
+        Stores sorted data into a list limited to numCounties and prints the 
+        location (county,state) to the terminal.
+        '''
         if self._sorted:       
             for c in range(self.numCounties):
                 county_ = self.countydf.iloc[c]['county']
@@ -90,15 +118,8 @@ class NYTCovid:
             for location in covid.topCounties:
                 print(location)
                 
-              
-    def peek(self):
-        if self._countyupdated:
-            print()
-            print(f'Last {self.numCounties} rows of the county data')
-            print("="*50)
-            print(self.countydf.head(self.numCounties))
             
-        
+
 covid = NYTCovid()
 
 covid.today()
@@ -108,7 +129,6 @@ covid.dateUpdate()
 covid.process()
 covid.sortByCases()
 covid.getTopCounties()
-
 
 
 
