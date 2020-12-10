@@ -22,7 +22,6 @@ import geopy
 
 
 # store data from CSV file in a list called locations
-locations = []
 NYTcountiesData = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
 
 class NYTCovid:
@@ -126,20 +125,18 @@ covid.dateUpdate()
 covid.process()
 covid.sortByCases()
 covid.getTopCounties()
-         
+        
 
-# from geopy.geocoders import Nominatim
-# geolocator = Nominatim(user_agent="covid_streetview")
-# convertLocation = geolocator.geocode("175 5th Avenue NYC")
-
+locations = []
+ 
 # variables for street view api and image processing
 keyDoc = open('keys.txt', 'r')
 apiKey = keyDoc.read()
 print(apiKey)
-localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/streetview_test/downloadTest/'
+localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
 curRow = 1
 numImages = 0;
-headings = [0, 90, 180, 270]
+headings = [0, 180]
 fov = 90
 
 
@@ -154,11 +151,23 @@ def getStreetView(lat_, lon_, heading_, fileName_, saveFolder_):
     imageHeading = r'&fov={0}&heading={1}'.format(fov, heading_)
     useAPI = r'&key={0}'.format(apiKey)
    
+    print
     # create URL, request image, and download to localFolder
     myUrl = base + imageSize + imageLocation + imageHeading + useAPI 
     urllib.request.urlretrieve(myUrl, os.path.join(saveFolder_,fileName_))
+   
+
+
+from geopy.geocoders import Nominatim
+geolocator = Nominatim(user_agent="covid_streetview")
+
+for l in covid.topCounties:
+    convertLocation = geolocator.geocode(l)
+    locationText = convertLocation.address
+    latLon = (convertLocation.latitude,convertLocation.longitude)
+    locations.append(latLon)
     
-    
+
 # for each location, format file and download street view image for each heading
 for location in locations:
     for heading in headings:

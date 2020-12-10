@@ -55,8 +55,8 @@ fov = 90
 
 def getStreetView(lat_, lon_, heading_, fileName_, saveFolder_):
     '''This function creates a URL with parameters for each image, 
-    and downloads image using streetview static api ''' 
-    
+    and downloads image using streetview static api 
+    ''' 
     # assign parameters for image request
     base = r'https://maps.googleapis.com/maps/api/streetview?'
     imageSize = r'&size=640x500'    # max free size is 640x640
