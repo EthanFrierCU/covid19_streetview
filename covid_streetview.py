@@ -116,17 +116,6 @@ class NYTCovid:
             print(f'Top {covid.numCounties} counties by total cases:')
             for location in covid.topCounties:
                 print(location)
-                
-covid = NYTCovid()
-
-covid.today()
-covid.updateCounty()
-covid.dateUpdate()
-
-covid.process()
-covid.sortByCases()
-covid.getTopCounties()
-        
 
 
 locations = []
@@ -137,7 +126,6 @@ apiKey = keyDoc.read()
 print(apiKey)
 localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
 # curRow = 1
-# numImages = 0
 headings = [0, 180]
 fov = 90
 radius = 100000
@@ -175,13 +163,14 @@ def makeLatLon():
         latLon = (convertLocation.latitude,convertLocation.longitude)
         locations.append(latLon)
         print(latLon)
-    
 
-
-# for each location, format file and download street view image for each heading
 
 def execute():
+    '''
+    for each location, format file and download street view image for each heading
+    '''
     curRow = 1
+    global numImages
     numImages = 0
     for location in locations:
         for heading in headings:
@@ -199,12 +188,22 @@ def execute():
             
         curRow += 1
       
+                      
+covid = NYTCovid()
+
+covid.today()
+covid.updateCounty()
+covid.dateUpdate()
+
+covid.process()
+covid.sortByCases()
+covid.getTopCounties()
         
 makeLatLon()      
 execute()
 
     
-# downloads complete, print number of images processes    
+# downloads complete, print number of images processed    
 print(f'Processed {str(numImages)} images.')
 print('Done.')
 
