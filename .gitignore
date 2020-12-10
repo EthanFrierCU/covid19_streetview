@@ -1,6 +1,9 @@
 # ignore api keys file
 keys.txt
 
+# ignore downloadImages/ folder
+downloadImages/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
