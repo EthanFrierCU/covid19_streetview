@@ -61,6 +61,7 @@ import time
 import datetime
 import geopy
 from geopy.geocoders import Nominatim
+import csv
 
 
 class NYTCovidData:
@@ -77,6 +78,8 @@ class NYTCovidData:
         number of counties to get images for
     topCounties : list
         stores text strings of 'County,State' limited to numCounties
+    topCases : list 
+        stores top case numbers in list
     countydf : DataFrame
         pandas DataFrame to store data from NYT CSV file
     _countyupdated : bool
@@ -114,6 +117,7 @@ class NYTCovidData:
         self._today = date.today()
         self.numCounties = 20
         self.topCounties = []
+        self.topCases = []
         self.countydf = None
         self._countyupdated = False
         self._processed = False
@@ -233,6 +237,18 @@ class NYTCovidData:
             print(f'Top {covid.numCounties} counties by total cases:')
             for location in covid.topCounties:
                 print(f'   {location}')
+                
+    def getTopCases(self):
+        """ Creates list of cases.
+        
+        Returns:
+            topCases : list 
+            
+        """
+        if self._sorted:       
+            for c in range(self.numCounties):
+                cases_ = self.countydf.iloc[c]['cases']
+                self.topCases.append(cases_)
 
 
 class StreetView:
@@ -282,7 +298,7 @@ class StreetView:
         self.filename = ''
         self.numImages = 0
         self.numLocations = 1
-        self.localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
+        # self.localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
 
     def getKey(self):
         """ Pulls API key from keys.txt.
@@ -398,20 +414,52 @@ class StreetView:
                 NYTlocation =  covid.topCounties[((self.numLocations)-1)].replace(" ","")
                 
                 self.filename = "{0}_{1}_{2}_({3},{4},h{5}).jpg".format(str(self.numLocations).zfill(3), covid._today, NYTlocation, lat, lon, heading)        
-                self.getStreetView(lat, lon, heading, self.filename, self.localFolder)  
+                self.getStreetView(lat, lon, heading, self.filename, go.todayPath)  
                 
                 print(f'   Got {self.filename}')      
                 self.numImages += 1      
             
             self.numLocations += 1
                
+
+class DailyDataManager:
+
+    def __init__(self):
+        self.todayPath = ''
+        self.nameCSV = '_' + str(covid._today) + '_byTopCases.csv'
+        self.nameFolder = str(covid._today)
+        self.rootFolder =  os.getcwd()
+        self.saveFolder = '/Users/ethanfrier/Desktop/covid19_streetview/dailyData/'
+
+
+    def createFolder(self):
+        self.todayPath = os.path.join(self.saveFolder, self.nameFolder)
+        try:
+            os.mkdir(self.todayPath)
+            print('')
+            print(f'New folder /dailyData/{self.nameFolder} created')
+        except Exception:
+            pass
+            print('')
+            print(f'Folder /dailyData/{self.nameFolder} already exists!')
+
+    def createCSV(self):
+        os.chdir(self.todayPath)
+        with open(self.nameCSV,'w', newline='') as newCSV:
+            CSVwriter = csv.writer(newCSV)  
+            CSVwriter.writerow(['rank', 'cases', 'county', 'latLon'])
+            for idx, data in enumerate(covid.topCounties):
+                CSVwriter.writerow( [idx+1, covid.topCases[idx], data, streetView.locations[idx]])
+            print(f'Saved {self.nameCSV} to /{self.nameFolder}')
+        os.chdir(self.rootFolder)
+            
             
 if __name__ == "__main__":
     covid = NYTCovidData()
     streetView = StreetView()
+    go = DailyDataManager()
 
     streetView.getKey()
-
     covid.today()
     covid.updateCounty()
     covid.dateUpdate()
@@ -419,8 +467,12 @@ if __name__ == "__main__":
     covid.process()
     covid.sortByCases()
     covid.getTopCounties()
-        
+    covid.getTopCases()
     streetView.makeLatLon()      
+    
+    go.createFolder()
+    go.createCSV()
+    
     streetView.execute()
     
     print('')

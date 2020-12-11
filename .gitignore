@@ -4,8 +4,12 @@ keys.txt
 # ignore downloadImages folder
 # downloadImages/
 
-#ignore oldImages folder
+#ignore these image folders
 oldImages/
+testImages/
+
+# ignore this folder
+testFiles/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
