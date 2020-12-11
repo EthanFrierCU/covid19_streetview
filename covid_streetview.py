@@ -252,6 +252,8 @@ class StreetView:
         distance in meters from location API will look for an image (best when > 100000)
     size : str
         size of image - max free size is 640x640 
+    filename : str
+        name of each file downloaded 
     numImages : int
         number of images processed 
     numLocations : int
@@ -276,7 +278,8 @@ class StreetView:
         self.headings = [0, 120, 240]    
         self.fov = 90               
         self.radius = 100000        
-        self.size = '640x500'       
+        self.size = '640x500'   
+        self.filename = ''
         self.numImages = 0
         self.numLocations = 1
         self.localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
@@ -393,13 +396,11 @@ class StreetView:
                 
                 lat, lon = location    
                 NYTlocation =  covid.topCounties[((self.numLocations)-1)].replace(" ","")
-                thisDay = covid._today
                 
-                filename = "{0}_{1}_{2}_({3},{4},h{5}).jpg".format(str(self.numLocations).zfill(3), thisDay, NYTlocation, lat, lon, heading)        
+                self.filename = "{0}_{1}_{2}_({3},{4},h{5}).jpg".format(str(self.numLocations).zfill(3), covid._today, NYTlocation, lat, lon, heading)        
+                self.getStreetView(lat, lon, heading, self.filename, self.localFolder)  
                 
-                self.getStreetView(lat, lon, heading, filename, self.localFolder)  
-                
-                print(f'   Got {filename}')      
+                print(f'   Got {self.filename}')      
                 self.numImages += 1      
             
             self.numLocations += 1
