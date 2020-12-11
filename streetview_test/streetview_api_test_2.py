@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Dec  8 14:59:30 2020
 @author: Ethan Frier
 
 This program downloads street view images from google maps static street view 

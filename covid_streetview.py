@@ -60,6 +60,7 @@ import io
 import time
 import datetime
 import geopy
+from geopy.geocoders import Nominatim
 
 
 class NYTCovidData:
@@ -261,11 +262,11 @@ class StreetView:
     getKey():
         Pulls API key from keys.txt.
     getStreetView(lat_, lon_, heading_, fileName_, saveFolder_):
-        Compiles unique URL and downloads images from streetview API.
+        Compiles URL and downloads image from streetview API.
     makeLatLon():
         Generates locations['float(lat),float(lon)'] from topCounties['County,State'].
     execute():
-        Generates unique filename and calls getStreetView(parameters).
+        Generates filename and calls getStreetView(parameters).
     """    
     
     def __init__(self):
@@ -302,54 +303,55 @@ class StreetView:
         """ Compiles unique URL and downloads images from streetview API.
         
         Generates unique URL using: size, lat_, lon_, fov, heading_, radius, apiKey.
-        Uses urllib library to send request to API.
-        Downloads images to saveFolder_ and names as .jpg using filename_ 
+        Uses urllib library to send request to API. Downloads images to 
+        designated folder and saves as .jpg using filename_ 
 
         Parameters:
-            lat_ : int
-                latitude of current image to be downloaded 
-            lon_ : int
-                longitude of current image to be downloaded 
+            lat_ : float
+            lon_ : float
             heading_ : int
-                heading of current image to be downloaded 
             fileName_ : str
-                file name of current image to be downloaded
             saveFolder : str
-                folder where current image will be downloaded
             
+        Returns:
+            urllib request
+                urllib.request.urlretrieve()
+            streetview image download to localFolder
+                
         """
         base = r'https://maps.googleapis.com/maps/api/streetview?'
         imageSize = r'&size={}'.format(self.size) 
         imageLocation = r'&location={0},{1}'.format(lat_, lon_)
         imageHeading = r'&fov={0}&heading={1}'.format(self.fov, heading_)
         searchRadius = r'&radius={}'.format(self.radius)
-        useAPI = r'&key={}'.format(self.apiKey)
+        useKey = r'&key={}'.format(self.apiKey)
        
-        myUrl = base + imageSize + imageLocation + imageHeading + searchRadius + useAPI 
+        myUrl = base + imageSize + imageLocation + imageHeading + searchRadius + useKey 
         urllib.request.urlretrieve(myUrl, os.path.join(saveFolder_,fileName_))
    
     def makeLatLon(self):
         """ Generates list of locations as latitude and longitude.
 
-        This module uses the geopy library to convert a text string location 
+        This method uses the geopy library to convert a text string location 
         into a latitude and longitude. It uses topCounties[] as an input. It
         also generates an address for each location which is stored in 
         locationText (unused).
 
         Returns:
             locations[] : list 
+                formated as ['float(latitude),float(longitude)']
             locationText : str
             
         """
-        from geopy.geocoders import Nominatim
         geolocator = Nominatim(user_agent="covid_streetview")
         print('')
-        print(f'Using geopy: converting {len(covid.topCounties)} locations:')
+        print(f'Using geopy, converting {len(covid.topCounties)} locations:')
         
         for L in covid.topCounties:
             convertLocation = geolocator.geocode(L) 
             locationText = convertLocation.address 
             latLon = (convertLocation.latitude,convertLocation.longitude)
+            
             self.locations.append(latLon)
             print(f'   {latLon}')
 
@@ -360,8 +362,8 @@ class StreetView:
         filename and parameters for getStreetView(). It then calls 
         getStreetView() and prints each time an image has been downloaded. 
         
-        The structure for generating each image is: 
-            location[i] (index position containing 'float(lat),float(lon)')
+        The variables and structurs for generating each image is: 
+            location[i] (i = 'float(lat),float(lon)')
                 heading[i] (direction camera is pointing)
                     lat (extracted from locations[i])
                     lon (extracted from locations[i])
@@ -385,31 +387,37 @@ class StreetView:
         """  
         print('')
         print('Downloading from Streetview static API:')
+        
         for location in self.locations:
             for heading in self.headings:
+                
                 lat, lon = location     
                 filename = "{0}_{1}_lat{2}_lon{3}.jpg".format(str(self.numLocations).zfill(3), heading, lat, lon,)        
+                
                 self.getStreetView(lat, lon, heading, filename, self.localFolder)  
+                
                 print(f'   Got {filename}')      
                 self.numImages += 1      
+            
             self.numLocations += 1
-                    
+               
+            
+if __name__ == "__main__":
+    covid = NYTCovidData()
+    streetView = StreetView()
 
-covid = NYTCovidData()
-streetView = StreetView()
+    streetView.getKey()
 
-streetView.getKey()
+    covid.today()
+    covid.updateCounty()
+    covid.dateUpdate()
 
-covid.today()
-covid.updateCounty()
-covid.dateUpdate()
-
-covid.process()
-covid.sortByCases()
-covid.getTopCounties()
+    covid.process()
+    covid.sortByCases()
+    covid.getTopCounties()
         
-streetView.makeLatLon()      
-streetView.execute()
+    streetView.makeLatLon()      
+    streetView.execute()
 
 
 print('')
