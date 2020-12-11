@@ -5,6 +5,7 @@ Created on Thu Dec 10 16:37:25 2020
 @author: ethanfrier
 covid_streetview.py with no docstrings
 """
+
 import urllib
 import os
 import pandas
@@ -13,15 +14,16 @@ import io
 import time
 import datetime
 import geopy
+from geopy.geocoders import Nominatim
+
 
 class NYTCovidData:
-
+   
     def __init__(self):
-        """Initialize NYTCovidData class attributes. """
         from datetime import date
         self.NYTcountiesData = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
         self._today = date.today()
-        self.numCounties = 12
+        self.numCounties = 20
         self.topCounties = []
         self.countydf = None
         self._countyupdated = False
@@ -86,15 +88,17 @@ class NYTCovidData:
             for location in covid.topCounties:
                 print(f'   {location}')
 
+
 class StreetView:   
     
     def __init__(self):
         self.apiKey = ''
         self.locations = []
-        self.headings = [0, 180]    
+        self.headings = [0, 120, 240]    
         self.fov = 90               
         self.radius = 100000        
-        self.size = '640x500'       
+        self.size = '640x500'   
+        self.filename = ''
         self.numImages = 0
         self.numLocations = 1
         self.localFolder = '/Users/ethanfrier/Desktop/covid19_streetview/downloadImages/'
@@ -112,47 +116,62 @@ class StreetView:
         imageLocation = r'&location={0},{1}'.format(lat_, lon_)
         imageHeading = r'&fov={0}&heading={1}'.format(self.fov, heading_)
         searchRadius = r'&radius={}'.format(self.radius)
-        useAPI = r'&key={}'.format(self.apiKey)
+        useKey = r'&key={}'.format(self.apiKey)
        
-        myUrl = base + imageSize + imageLocation + imageHeading + searchRadius + useAPI 
+        myUrl = base + imageSize + imageLocation + imageHeading + searchRadius + useKey 
         urllib.request.urlretrieve(myUrl, os.path.join(saveFolder_,fileName_))
    
     def makeLatLon(self):
-        from geopy.geocoders import Nominatim
         geolocator = Nominatim(user_agent="covid_streetview")
         print('')
-        print(f'Using geopy {len(covid.topCounties)} locations converting:')
+        print(f'Using geopy, converting {len(covid.topCounties)} locations:')
         
         for L in covid.topCounties:
             convertLocation = geolocator.geocode(L) 
             locationText = convertLocation.address 
             latLon = (convertLocation.latitude,convertLocation.longitude)
+            
             self.locations.append(latLon)
             print(f'   {latLon}')
 
     def execute(self):
         print('')
         print('Downloading from Streetview static API:')
+        
         for location in self.locations:
             for heading in self.headings:
-                lat, lon = location     
-                filename = "{0}_{1}_lat{2}_lon{3}.jpg".format(str(self.numLocations).zfill(3), heading, lat, lon,)        
-                self.getStreetView(lat, lon, heading, filename, self.localFolder)  
-                print(f'   Got {filename}')      
+                
+                lat, lon = location    
+                NYTlocation =  covid.topCounties[((self.numLocations)-1)].replace(" ","")
+                
+                self.filename = "{0}_{1}_{2}_({3},{4},h{5}).jpg".format(str(self.numLocations).zfill(3), covid._today, NYTlocation, lat, lon, heading)        
+                self.getStreetView(lat, lon, heading, self.filename, self.localFolder)  
+                
+                print(f'   Got {self.filename}')      
                 self.numImages += 1      
+            
             self.numLocations += 1
-                    
-covid = NYTCovidData()
-streetView = StreetView()
-streetView.getKey()
-covid.today()
-covid.updateCounty()
-covid.dateUpdate()
-covid.process()
-covid.sortByCases()
-covid.getTopCounties()      
-streetView.makeLatLon()      
-streetView.execute()
-print('')
-print(f'Processed {str(streetView.numImages)} images.')
-print('Done.')
+               
+            
+if __name__ == "__main__":
+    covid = NYTCovidData()
+    streetView = StreetView()
+
+    streetView.getKey()
+
+    covid.today()
+    covid.updateCounty()
+    covid.dateUpdate()
+
+    covid.process()
+    covid.sortByCases()
+    covid.getTopCounties()
+        
+    streetView.makeLatLon()      
+    streetView.execute()
+    
+    print('')
+    print(f'Processed {str(streetView.numImages)} images.')
+    print('Done.')
+
+

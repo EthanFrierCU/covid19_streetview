@@ -365,7 +365,7 @@ class StreetView:
         filename and parameters for getStreetView(). It then calls 
         getStreetView() and prints each time an image has been downloaded. 
         
-        The variables and structurs for generating each image is: 
+        The variables and structurs for generating each image: 
             location[i] (i = 'float(lat),float(lon)')
                 heading[i] (direction camera is pointing)
                     lat (extracted from locations[i])
